@@ -41,8 +41,8 @@ public class HibaServer {
                             ch.pipeline().addLast(new ObjectDecoder(ClassResolvers.softCachingResolver(ClassLoader.getSystemClassLoader())));
                             ch.pipeline().addLast(new ObjectEncoder());
 
-                            ch.pipeline().addLast(new GetBrokerNameMessageHandler());
                             ch.pipeline().addLast(new LoginMessageHandler());
+                            ch.pipeline().addLast(new GetBrokerNameMessageHandler());
 
                             ch.pipeline().addLast(new ChannelInboundHandlerAdapter() {
                                 @Override

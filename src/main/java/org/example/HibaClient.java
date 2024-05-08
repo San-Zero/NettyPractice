@@ -10,13 +10,22 @@ import io.netty.handler.codec.serialization.ObjectDecoder;
 import io.netty.handler.codec.serialization.ObjectEncoder;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
+import org.example.handler.GetBrokerNameMessageHandler;
 import org.example.handler.GetBrokerNameResponseHandler;
+import org.example.handler.LoginMessageHandler;
 import org.example.message.GetBrokerNameMessage;
-import org.example.message.GetBrokerNameResponse;
 import org.example.message.LoginMessage;
 
 public class HibaClient {
-    public static void main(String[] args) throws Exception {
+    private final String host;
+    private final int port;
+
+    public HibaClient(String host, int port) {
+        this.host = host;
+        this.port = port;
+    }
+
+    public void run() throws Exception {
         NioEventLoopGroup eventExecutors = new NioEventLoopGroup();
         try {
             //创建bootstrap对象，配置参数
@@ -52,9 +61,7 @@ public class HibaClient {
                     });
 
             System.out.println("Connect to HiBA Server");
-            //连接服务端
-            ChannelFuture channelFuture = bootstrap.connect("127.0.0.1", 6666).sync();
-            //对通道关闭进行监听
+            ChannelFuture channelFuture = bootstrap.connect(host, port).sync();
             channelFuture.channel().closeFuture().sync();
         } finally {
             //关闭线程组
@@ -62,4 +69,46 @@ public class HibaClient {
         }
     }
 
+    public void runHandler(ChannelHandler handler,Object message) throws Exception {
+        NioEventLoopGroup eventExecutors = new NioEventLoopGroup();
+        try {
+            Bootstrap bootstrap = new Bootstrap();
+            bootstrap.group(eventExecutors)
+                    .channel(NioSocketChannel.class)
+                    .handler(new ChannelInitializer<SocketChannel>() {
+                        @Override
+                        protected void initChannel(SocketChannel ch) throws Exception {
+                            ch.pipeline().addLast(new LoggingHandler(LogLevel.INFO));
+                            ch.pipeline().addLast(new ObjectDecoder(ClassResolvers.softCachingResolver(ClassLoader.getSystemClassLoader())));
+                            ch.pipeline().addLast(new ObjectEncoder());
+
+                            ch.pipeline().addLast(handler);
+                            ch.pipeline().addLast(new ChannelInboundHandlerAdapter() {
+                                @Override
+                                public void channelActive(ChannelHandlerContext ctx) throws Exception {
+                                    if (message == null) {
+                                        return;
+                                    }
+                                    ctx.channel().writeAndFlush(message);
+                                }
+                            });
+                        }
+                    });
+
+            System.out.println("Connect to HiBA Server");
+            ChannelFuture channelFuture = bootstrap.connect(host, port).sync();
+            channelFuture.channel().closeFuture();
+        } finally {
+            eventExecutors.shutdownGracefully();
+        }
+    }
+
+    public static void main(String[] args) throws Exception {
+        HibaClient hibaClient = new HibaClient("127.0.0.1", 6666);
+
+        //hibaClient.run();
+
+        hibaClient.runHandler(new GetBrokerNameResponseHandler(), new GetBrokerNameMessage());
+        hibaClient.runHandler(new LoginMessageHandler(), new LoginMessage("Node1", "192.168.200.200", 6666));
+    }
 }
