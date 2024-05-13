@@ -3,6 +3,8 @@ package org.example;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.pool.ChannelPool;
+import io.netty.channel.pool.FixedChannelPool;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.serialization.ClassResolvers;
@@ -16,99 +18,86 @@ import org.example.handler.LoginMessageHandler;
 import org.example.message.GetBrokerNameMessage;
 import org.example.message.LoginMessage;
 
+import java.net.InetSocketAddress;
+import java.util.concurrent.CompletableFuture;
+
 public class HibaClient {
-    private final String host;
-    private final int port;
 
-    public HibaClient(String host, int port) {
-        this.host = host;
-        this.port = port;
+    private final ChannelPool channelPool;
+
+    public HibaClient(String host, int port, int maxConnections) {
+        EventLoopGroup group = new NioEventLoopGroup();
+
+        Bootstrap bootstrap = new Bootstrap();
+        bootstrap.group(group)
+                .channel(NioSocketChannel.class)
+                .remoteAddress(new InetSocketAddress(host, port))
+                .handler(new ChannelInitializer<Channel>() {
+                    @Override
+                    protected void initChannel(Channel ch) {
+                        // Add your channel handlers here (e.g., encoders, decoders, business logic)
+                    }
+                });
+
+        // Create a fixed-size channel pool
+        this.channelPool = new FixedChannelPool(bootstrap, new MyChannelPoolHandler(), maxConnections);
     }
 
-    public void run() throws Exception {
-        NioEventLoopGroup eventExecutors = new NioEventLoopGroup();
-        try {
-            //创建bootstrap对象，配置参数
-            Bootstrap bootstrap = new Bootstrap();
-            //设置线程组
-            bootstrap.group(eventExecutors)
-                    //设置客户端的通道实现类型
-                    .channel(NioSocketChannel.class)
-                    //使用匿名内部类初始化通道
-                    .handler(new ChannelInitializer<SocketChannel>() {
-                        @Override
-                        protected void initChannel(SocketChannel ch) throws Exception {
-                            ch.pipeline().addLast(new LoggingHandler(LogLevel.INFO));
-                            ch.pipeline().addLast(new ObjectDecoder(ClassResolvers.softCachingResolver(ClassLoader.getSystemClassLoader())));
-                            ch.pipeline().addLast(new ObjectEncoder());
+    public CompletableFuture<Void> sendMessageAsync(String message) {
+        CompletableFuture<Void> future = new CompletableFuture<>();
 
-                            ch.pipeline().addLast(new GetBrokerNameResponseHandler());
-                            ch.pipeline().addLast(new ChannelInboundHandlerAdapter() {
-                                @Override
-                                public void channelActive(ChannelHandlerContext ctx) throws Exception {
-                                    ctx.channel().writeAndFlush(new GetBrokerNameMessage());
-                                    ctx.channel().writeAndFlush(new LoginMessage("Node1", "192.168.200.200", 6666));
-                                }
+        // Acquire a channel from the pool
+        channelPool.acquire().addListener((ChannelFuture channelFuture) -> {
+            if (channelFuture.isSuccess()) {
+                Channel channel = channelFuture.channel();
+                // Send the message asynchronously over the channel
+                channel.writeAndFlush(message).addListener((ChannelFuture writeFuture) -> {
+                    if (writeFuture.isSuccess()) {
+                        // Message sent successfully
+                        future.complete(null);
+                    } else {
+                        // Handle write failure
+                        future.completeExceptionally(writeFuture.cause());
+                    }
+                    // Release the channel back to the pool
+                    channelPool.release(channel);
+                });
+            } else {
+                // Handle connection failure
+                future.completeExceptionally(channelFuture.cause());
+            }
+        });
 
-                                @Override
-                                public void channelRead(ChannelHandlerContext ctx, Object msg) {
-                                    System.out.println("Received message of unknown type: " + msg.getClass());
-                                }
-                            });
+        return future;
+    }
 
+    // Custom channel pool handler (you can customize this further)
+    private static class MyChannelPoolHandler implements ChannelPool.Handler{
+        @Override
+        public void channelReleased(Channel ch) {
+            // Called when a channel is released back to the pool
+        }
 
-                        }
-                    });
+        @Override
+        public void channelAcquired(Channel ch) {
+            // Called when a channel is acquired from the pool
+        }
 
-            System.out.println("Connect to HiBA Server");
-            ChannelFuture channelFuture = bootstrap.connect(host, port).sync();
-            channelFuture.channel().closeFuture().sync();
-        } finally {
-            //关闭线程组
-            eventExecutors.shutdownGracefully();
+        @Override
+        public void channelCreated(Channel ch) {
+            // Called when a new channel is created (initialization)
         }
     }
 
-    public void runHandler(ChannelHandler handler,Object message) throws Exception {
-        NioEventLoopGroup eventExecutors = new NioEventLoopGroup();
-        try {
-            Bootstrap bootstrap = new Bootstrap();
-            bootstrap.group(eventExecutors)
-                    .channel(NioSocketChannel.class)
-                    .handler(new ChannelInitializer<SocketChannel>() {
-                        @Override
-                        protected void initChannel(SocketChannel ch) throws Exception {
-                            ch.pipeline().addLast(new LoggingHandler(LogLevel.INFO));
-                            ch.pipeline().addLast(new ObjectDecoder(ClassResolvers.softCachingResolver(ClassLoader.getSystemClassLoader())));
-                            ch.pipeline().addLast(new ObjectEncoder());
+    public static void main(String[] args) {
+        HibaClient client = new HibaClient("localhost", 8080, 10);
 
-                            ch.pipeline().addLast(handler);
-                            ch.pipeline().addLast(new ChannelInboundHandlerAdapter() {
-                                @Override
-                                public void channelActive(ChannelHandlerContext ctx) throws Exception {
-                                    if (message == null) {
-                                        return;
-                                    }
-                                    ctx.channel().writeAndFlush(message);
-                                }
-                            });
-                        }
-                    });
-
-            System.out.println("Connect to HiBA Server");
-            ChannelFuture channelFuture = bootstrap.connect(host, port).sync();
-            channelFuture.channel().closeFuture();
-        } finally {
-            eventExecutors.shutdownGracefully();
-        }
-    }
-
-    public static void main(String[] args) throws Exception {
-        HibaClient hibaClient = new HibaClient("127.0.0.1", 6666);
-
-        //hibaClient.run();
-
-        hibaClient.runHandler(new GetBrokerNameResponseHandler(), new GetBrokerNameMessage());
-        hibaClient.runHandler(new LoginMessageHandler(), new LoginMessage("Node1", "192.168.200.200", 6666));
+        // Send a message asynchronously
+        client.sendMessageAsync("Hello, world!").thenAccept((Void) -> {
+            System.out.println("Message sent successfully");
+        }).exceptionally((Throwable t) -> {
+            System.err.println("Failed to send message: " + t.getMessage());
+            return null;
+        });
     }
 }
