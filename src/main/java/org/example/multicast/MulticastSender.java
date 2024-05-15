@@ -53,17 +53,6 @@ public class MulticastSender {
         }
     }
 
-    public void sendMulticastMessage(String message) throws InterruptedException {
-        ChannelFuture future = bootstrap.bind(0).sync();
-        DatagramChannel channel = (DatagramChannel) future.channel();
-        DatagramPacket packet = new DatagramPacket(
-                Unpooled.copiedBuffer(message, CharsetUtil.UTF_8),
-                new InetSocketAddress(MULTICAST_IP, PORT));
-        channel.writeAndFlush(packet).sync();
-        System.out.println("Message sent: " + message);
-        future.channel().close().sync();
-    }
-
     public void sendMulticastMessage(Object message) throws Exception {
         ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
         ObjectOutputStream objStream = new ObjectOutputStream(byteStream);
