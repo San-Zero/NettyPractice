@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="RemoteTargetsManager">
+    <targets>
+      <target name="ipc001" type="ssh/sftp" uuid="bb068095-88f5-482c-8c34-b715b3113a85">
+        <config>
+          <option name="projectRootOnTarget" value="/home/user/nettyPractice" />
+          <option name="serverName" value="user@192.168.200.114:22 password" />
+        </config>
+        <ContributedStateBase type="JavaLanguageRuntime">
+          <config>
+            <option name="homePath" value="/usr/jvm/jdk-21.0.2" />
+            <option name="javaVersionString" value="21" />
+          </config>
+        </ContributedStateBase>
+      </target>
+      <target name="ipc005" type="ssh/sftp" uuid="f6670442-fe6c-4c1f-84ca-62451bb7e932">
+        <config>
+          <option name="projectRootOnTarget" value="/home/user/nettyPractice" />
+          <option name="serverName" value="user@192.168.200.214:22 password" />
+        </config>
+        <ContributedStateBase type="JavaLanguageRuntime">
+          <config>
+            <option name="homePath" value="/usr/jvm/jdk-21.0.2" />
+            <option name="javaVersionString" value="21" />
+          </config>
+        </ContributedStateBase>
+      </target>
+      <target name="gslab-i7" type="ssh/sftp" uuid="3b867cad-b608-4232-bdb3-08ee7c8a066c">
+        <config>
+          <option name="projectRootOnTarget" value="/home/user/nettyPractice" />
+          <option name="serverName" value="user@192.168.200.200:22 password" />
+        </config>
+        <ContributedStateBase type="JavaLanguageRuntime">
+          <config>
+            <option name="homePath" value="/usr/jvm/jdk-21.0.2" />
+            <option name="javaVersionString" value="21" />
+          </config>
+        </ContributedStateBase>
+      </target>
+    </targets>
+  </component>
+</project>
