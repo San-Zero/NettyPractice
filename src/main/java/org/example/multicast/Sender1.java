@@ -1,5 +1,6 @@
 package org.example.multicast;
 
+import org.example.message.LoginMessage;
 import org.example.multicast.message.ElectionMessage;
 
 public class Sender1 {
@@ -10,5 +11,6 @@ public class Sender1 {
         sender.sendMulticastMessage("3. Hello World");
 
         sender.sendMulticastMessage(new ElectionMessage("Node1", 4, 3.4));
+        sender.sendMulticastMessage(new LoginMessage("Node1", "192.168.200.200", 8080));
     }
 }
