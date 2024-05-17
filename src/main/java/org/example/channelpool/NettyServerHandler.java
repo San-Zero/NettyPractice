@@ -13,27 +13,35 @@ public class NettyServerHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
-        System.out.println("channelActived");
+        handleLoginMessage("channelActived");
         super.channelActive(ctx);
     }
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         switch (msg) {
-            case String body -> {
-                System.out.println(count.getAndIncrement() + ":" + body);
-                ctx.writeAndFlush("Welcome to Netty.");
-            }
-            case GetBrokerNameMessage getBrokerNameMessage -> {
-                System.out.println("Received GetBrokerNameMessage");
-                System.out.println("Return Broker Name to HiBA Client");
-                ctx.writeAndFlush(new GetBrokerNameResponse("Broker1"));
-            }
+            case String body -> handleString(ctx, body);
+            case GetBrokerNameMessage getBrokerNameMessage -> handleGetBrokerNameMessage(ctx);
             case LoginMessage body ->
-                    System.out.println("Login Message: " + body.getNodeName() + " " + body.getServerIp() + " " + body.getServerPort());
-            case null, default -> System.out.println("Received message of unknown type: " + msg.getClass());
+                    handleLoginMessage("Login Message: " + body.getNodeName() + " " + body.getServerIp() + " " + body.getServerPort());
+            case null, default -> handleLoginMessage("Received message of unknown type: " + msg.getClass());
         }
 
+    }
+
+    private static void handleLoginMessage(String body) {
+        System.out.println(body);
+    }
+
+    private static void handleGetBrokerNameMessage(ChannelHandlerContext ctx) {
+        System.out.println("Received GetBrokerNameMessage");
+        System.out.println("Return Broker Name to HiBA Client");
+        ctx.writeAndFlush(new GetBrokerNameResponse("Broker1"));
+    }
+
+    private static void handleString(ChannelHandlerContext ctx, String body) {
+        System.out.println(count.getAndIncrement() + ":" + body);
+        ctx.writeAndFlush("Welcome to Netty.");
     }
 
     @Override

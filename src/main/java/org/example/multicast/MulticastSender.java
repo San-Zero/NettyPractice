@@ -8,27 +8,19 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.DatagramPacket;
 import io.netty.channel.socket.nio.NioDatagramChannel;
-import io.netty.handler.logging.LogLevel;
-import io.netty.handler.logging.LoggingHandler;
-import io.netty.util.CharsetUtil;
-import io.netty.util.concurrent.Future;
-import org.example.codec.MessageDecoder;
-import org.example.codec.MessageEncoder;
-import org.example.multicast.message.ElectionMessage;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.net.InetSocketAddress;
 
 public class MulticastSender {
 
-    private final String MULTICAST_IP;
-    private final int PORT;
+    private final InetSocketAddress address;
     private Bootstrap bootstrap;
 
     public MulticastSender(String ip, int port) {
-        MULTICAST_IP = ip;
-        PORT = port;
+        address = new InetSocketAddress(ip, port);
 
         build();
     }
@@ -42,9 +34,7 @@ public class MulticastSender {
                     .handler(new ChannelInitializer<DatagramChannel>() {
                         @Override
                         protected void initChannel(DatagramChannel ch) throws Exception {
-                            ch.pipeline().addLast(new LoggingHandler(LogLevel.INFO));
-                            //ch.pipeline().addLast(new MessageDecoder());
-                            //ch.pipeline().addLast(new MessageEncoder());
+                            //ch.pipeline().addLast(new LoggingHandler(LogLevel.INFO));
                         }
                     });
         } catch (Exception e) {
@@ -54,20 +44,23 @@ public class MulticastSender {
     }
 
     public void sendMulticastMessage(Object message) throws Exception {
-        ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
-        ObjectOutputStream objStream = new ObjectOutputStream(byteStream);
-        objStream.writeObject(message);
-        objStream.flush();
-        byte[] byteData = byteStream.toByteArray();
+        byte[] byteData = serialize(message);
 
         ChannelFuture future = bootstrap.bind(0).sync();
         DatagramChannel channel = (DatagramChannel) future.channel();
         DatagramPacket packet = new DatagramPacket(
-                Unpooled.copiedBuffer(byteData),
-                new InetSocketAddress(MULTICAST_IP, PORT));
+                Unpooled.copiedBuffer(byteData), address);
         channel.writeAndFlush(packet).sync();
         System.out.println("Custom object message sent.");
         future.channel().close().sync();
+    }
+
+    private byte[] serialize(Object object) throws IOException {
+        ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
+        ObjectOutputStream objStream = new ObjectOutputStream(byteStream);
+        objStream.writeObject(object);
+        objStream.flush();
+        return byteStream.toByteArray();
     }
 }
 

@@ -15,7 +15,7 @@ public class MulticastReceiverHandler extends SimpleChannelInboundHandler<Datagr
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, DatagramPacket packet) throws Exception {
         ByteBuf content = packet.content();
-        Object receivedObject = decode(content);
+        Object receivedObject = deserialize(content);
 
         // Handle the object based on its type
         switch (receivedObject) {
@@ -27,7 +27,7 @@ public class MulticastReceiverHandler extends SimpleChannelInboundHandler<Datagr
         }
     }
 
-    private Object decode(ByteBuf content) throws Exception {
+    private Object deserialize(ByteBuf content) throws Exception {
         byte[] data = new byte[content.readableBytes()];
         content.readBytes(data);
         ByteArrayInputStream bis = new ByteArrayInputStream(data);

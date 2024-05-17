@@ -5,13 +5,6 @@ import io.netty.channel.ChannelInitializer;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.nio.NioDatagramChannel;
-import io.netty.handler.codec.DatagramPacketDecoder;
-import io.netty.handler.logging.LogLevel;
-import io.netty.handler.logging.LoggingHandler;
-import org.example.codec.MessageDecoder;
-import org.example.codec.MessageEncoder;
-import org.example.handler.LoginMessageHandler;
-import org.example.multicast.handler.ElectionMessageHandler;
 import org.example.multicast.handler.MulticastReceiverHandler;
 
 import java.net.InetSocketAddress;
@@ -41,12 +34,8 @@ public class MulticastReceiver {
                     .handler(new ChannelInitializer<DatagramChannel>() {
                         @Override
                         protected void initChannel(DatagramChannel ch) throws Exception {
-                            ch.pipeline().addLast(new LoggingHandler(LogLevel.INFO));
-                            //ch.pipeline().addLast(new MessageDecoder());
-                            //ch.pipeline().addLast(new MessageEncoder());
+                            //ch.pipeline().addLast(new LoggingHandler(LogLevel.INFO));
                             ch.pipeline().addLast(new MulticastReceiverHandler());
-                            //ch.pipeline().addLast(new ElectionMessageHandler());
-                            //ch.pipeline().addLast(new LoginMessageHandler());
                         }
                     });
 
