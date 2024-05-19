@@ -10,7 +10,9 @@ public class NettyClient {
         NetworkClient client = factory.getNetworkClient();
 
         client.sendString("Hello World");
-        String brokerName = client.getBrokerName();
+        client.getBrokerName().thenAccept(brokerName -> {
+            System.out.println("Broker Name: " + brokerName);
+        });
         client.loginToBroker(new LoginMessage("Node1", "192.168.200.200", 6666));
     }
 }

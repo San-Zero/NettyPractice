@@ -32,9 +32,8 @@ public class NettyChannelPoolHandler implements ChannelPoolHandler {
         channel.pipeline()
                 //.addLast(new LoggingHandler(LogLevel.INFO))
                 //.addLast(new DelimiterBasedFrameDecoder(1024, delimiter))
-                .addLast(new MessageDecoder())
-                .addLast(new MessageEncoder())
-                .addLast(new GetBrokerNameResponseHandler())
-                .addLast(new NettyClientHandler());
+                .addLast("MessageDecoder", new MessageDecoder())
+                .addLast("MessageEncoder", new MessageEncoder())
+                .addLast("NettyClientHandler", new NettyClientHandler());
     }
 }
