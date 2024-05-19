@@ -14,7 +14,11 @@ public class GetBrokerNameResponseHandler extends SimpleChannelInboundHandler<Ge
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, GetBrokerNameResponse msg) {
-        System.out.println("Broker Name: " + msg.getBrokerName());
+        if (msg.getBrokerName() != null && !msg.getBrokerName().isEmpty()) {
+            brokerNamePromise.setSuccess(msg.getBrokerName());
+        } else {
+            brokerNamePromise.setFailure(new Throwable("Invalid or empty broker name"));
+        }
     }
 
     @Override

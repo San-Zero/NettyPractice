@@ -10,6 +10,7 @@ import org.example.message.GetBrokerNameMessage;
 import org.example.message.LoginMessage;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 public class NetworkClient {
     private final SimpleChannelPool pool;
@@ -18,34 +19,35 @@ public class NetworkClient {
         this.pool = pool;
     }
 
-    private void sendMessage(Object message) {
-        Future<Channel> future = pool.acquire();
-        future.addListener((FutureListener<Channel>) f1 -> {
-            if (f1.isSuccess()) {
-                Channel ch = f1.getNow();
-                ch.writeAndFlush(message);
-                // Release back to pool
-                pool.release(ch);
-            }
-        });
+    public void sendString(String message) {
+        sendMessage(message);
     }
 
     public void loginToBroker(LoginMessage message) {
         sendMessage(message);
     }
 
-    public CompletableFuture<String> getBrokerName() {
+    public String getBrokerName() {
+        try {
+            return getBrokerNameAsync().get(10, TimeUnit.SECONDS);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    private CompletableFuture<String> getBrokerNameAsync() {
         // 創建一個CompletableFuture，用於最終返回brokerName結果
         CompletableFuture<String> brokerNameFuture = new CompletableFuture<>();
-
-        // 從poolMap中獲取與特定地址相關的channel pool
 
         // 從pool中獲取一個channel的Future
         Future<Channel> future = pool.acquire();
 
         // 為獲取channel的Future添加監聽器
         future.addListener((FutureListener<Channel>) f1 -> {
-            if (f1.isSuccess()) { // 如果成功獲得channel
+            if (!f1.isSuccess()) {
+                brokerNameFuture.completeExceptionally(f1.cause());
+            } else {
                 // 獲取現有channel
                 Channel ch = f1.getNow();
 
@@ -67,7 +69,7 @@ public class NetworkClient {
                     if (!f2.isSuccess()) {
                         // 如果獲取brokerName失敗，輸出失敗信息並將Future設為異常
                         brokerNameFuture.completeExceptionally(f2.cause());
-                    } else { // 如果成功接收到brokerName
+                    } else {
                         // 從Promise獲取brokerName
                         String brokerName = f2.getNow();
                         if (brokerName != null && !brokerName.isEmpty()) {
@@ -79,23 +81,25 @@ public class NetworkClient {
                         }
                     }
 
-                    // 移除GetBrokerNameResponseHandler
                     ch.pipeline().remove("getBrokerNameResponseHandler");
-                    // 釋放channel回pool
                     pool.release(ch);
                 });
-            } else {
-                // 如果無法成功獲取channel，將Future設為異常
-                brokerNameFuture.completeExceptionally(f1.cause());
             }
         });
 
-        // 返回最終的CompletableFuture
         return brokerNameFuture;
     }
 
-
-    public void sendString(String message) {
-        sendMessage(message);
+    private void sendMessage(Object message) {
+        Future<Channel> future = pool.acquire();
+        future.addListener((FutureListener<Channel>) f1 -> {
+            if (f1.isSuccess()) {
+                Channel ch = f1.getNow();
+                ch.writeAndFlush(message);
+                // Release back to pool
+                pool.release(ch);
+            }
+        });
     }
+
 }

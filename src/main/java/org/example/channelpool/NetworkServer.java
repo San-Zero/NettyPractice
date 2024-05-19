@@ -13,6 +13,7 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.util.concurrent.DefaultEventExecutorGroup;
 import org.example.codec.MessageDecoder;
 import org.example.codec.MessageEncoder;
+import org.example.handler.GetBrokerNameMessageHandler;
 
 public class NetworkServer {
     private final int port;
