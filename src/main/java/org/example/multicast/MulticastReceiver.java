@@ -22,10 +22,10 @@ public class MulticastReceiver {
         this.multicastPort = multicastPort;
         this.multicastInterface = multicastInterface;
 
-        build();
+        buildAndRun();
     }
 
-    private void build() {
+    private void buildAndRun() {
         NioEventLoopGroup group = new NioEventLoopGroup();
         try {
             Bootstrap bootstrap = new Bootstrap();

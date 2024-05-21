@@ -24,14 +24,12 @@ public class NettyChannelPoolHandler implements ChannelPoolHandler {
 
     @Override
     public void channelCreated(Channel ch) throws Exception {
-        ByteBuf delimiter = Unpooled.copiedBuffer("$_".getBytes());
         System.out.println("channelCreated. Channel ID: " + ch.id());
         SocketChannel channel = (SocketChannel) ch;
         channel.config().setKeepAlive(true);
         channel.config().setTcpNoDelay(true);
         channel.pipeline()
                 //.addLast(new LoggingHandler(LogLevel.INFO))
-                //.addLast(new DelimiterBasedFrameDecoder(1024, delimiter))
                 .addLast("MessageDecoder", new MessageDecoder())
                 .addLast("MessageEncoder", new MessageEncoder())
                 .addLast("NettyClientHandler", new NettyClientHandler());

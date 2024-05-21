@@ -7,8 +7,8 @@ import org.example.multicast.message.ElectionMessage;
 
 public class Sender1 {
     public static void main(String[] args) throws Exception {
-        MulticastFactory factory = new MulticastFactory();
-        MulticastSender sender = factory.getMulticastSender("230.0.0.0", 4321);
+        MulticastFactory factory = new MulticastFactory("230.0.0.0", 4321);
+        MulticastSender sender = factory.getMulticastSender();
         sender.sendMulticastMessage("1. Hello World");
         sender.sendMulticastMessage("2. Hello World");
         sender.sendMulticastMessage("3. Hello World");
