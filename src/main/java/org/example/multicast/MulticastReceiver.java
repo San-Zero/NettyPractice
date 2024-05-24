@@ -5,6 +5,8 @@ import io.netty.channel.ChannelInitializer;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.nio.NioDatagramChannel;
+import io.netty.handler.logging.LogLevel;
+import io.netty.handler.logging.LoggingHandler;
 import org.example.multicast.handler.MulticastReceiverHandler;
 
 import java.net.InetSocketAddress;
@@ -22,10 +24,10 @@ public class MulticastReceiver {
         this.multicastPort = multicastPort;
         this.multicastInterface = multicastInterface;
 
-        buildAndRun();
+        start();
     }
 
-    private void buildAndRun() {
+    private void start() {
         NioEventLoopGroup group = new NioEventLoopGroup();
         try {
             Bootstrap bootstrap = new Bootstrap();
@@ -34,7 +36,7 @@ public class MulticastReceiver {
                     .handler(new ChannelInitializer<DatagramChannel>() {
                         @Override
                         protected void initChannel(DatagramChannel ch) throws Exception {
-                            //ch.pipeline().addLast(new LoggingHandler(LogLevel.INFO));
+                            ch.pipeline().addLast(new LoggingHandler(LogLevel.INFO));
                             ch.pipeline().addLast(new MulticastReceiverHandler());
                         }
                     });
