@@ -9,7 +9,7 @@ import io.netty.channel.socket.nio.NioSocketChannel;
 
 import java.net.InetSocketAddress;
 
-public class ChannelPool {
+public class ChannelPool implements AutoCloseable{
     private final EventLoopGroup group = new NioEventLoopGroup();
     private final Bootstrap bootstrap = new Bootstrap();
     private final SimpleChannelPool pool;
@@ -26,6 +26,12 @@ public class ChannelPool {
 
     public SimpleChannelPool getPool() {
         return pool;
+    }
+
+    @Override
+    public void close() {
+        pool.close();
+        group.shutdownGracefully();
     }
 }
 

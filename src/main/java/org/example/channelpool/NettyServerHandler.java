@@ -5,6 +5,7 @@ import io.netty.channel.ChannelInboundHandlerAdapter;
 import org.example.message.GetBrokerNameMessage;
 import org.example.message.GetBrokerNameResponse;
 import org.example.message.LoginMessage;
+import org.example.message.LoginResponse;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -13,24 +14,27 @@ public class NettyServerHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
-        handleLoginMessage("channelActived");
+        System.out.println("Channel Active");
         super.channelActive(ctx);
     }
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         switch (msg) {
-            case String body -> handleString(ctx, body);
-            case GetBrokerNameMessage getBrokerNameMessage -> handleGetBrokerNameMessage(ctx);
-            case LoginMessage body ->
-                    handleLoginMessage("Login Message: " + body.getNodeName() + " " + body.getServerIp() + " " + body.getServerPort());
-            case null, default -> handleLoginMessage("Received message of unknown type: " + msg.getClass());
+            case String string -> handleString(ctx, string);
+            case GetBrokerNameMessage ignored -> handleGetBrokerNameMessage(ctx);
+            case LoginMessage loginMessage -> handleLoginMessage(ctx, loginMessage);
+            case null, default -> System.out.println("Unknown message type: " + msg);
         }
 
     }
 
-    private static void handleLoginMessage(String body) {
-        System.out.println(body);
+    private static void handleLoginMessage(ChannelHandlerContext ctx, LoginMessage loginMessage) {
+        System.out.println("Received LoginMessage: "
+                + loginMessage.getNodeName() + " "
+                + loginMessage.getServerIp() + " "
+                + loginMessage.getServerPort());
+        ctx.writeAndFlush(new LoginResponse(true));
     }
 
     private static void handleGetBrokerNameMessage(ChannelHandlerContext ctx) {
@@ -39,8 +43,8 @@ public class NettyServerHandler extends ChannelInboundHandlerAdapter {
         ctx.writeAndFlush(new GetBrokerNameResponse("Broker1"));
     }
 
-    private static void handleString(ChannelHandlerContext ctx, String body) {
-        System.out.println(count.getAndIncrement() + ":" + body);
+    private static void handleString(ChannelHandlerContext ctx, String string) {
+        System.out.println(count.getAndIncrement() + ":" + string);
         ctx.writeAndFlush("Welcome to Netty.");
     }
 

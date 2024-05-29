@@ -2,30 +2,36 @@ package org.example.handler;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
-import io.netty.util.concurrent.CompleteFuture;
-import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.Promise;
 import org.example.message.GetBrokerNameResponse;
 
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.LinkedBlockingQueue;
 
 public class GetBrokerNameResponseHandler extends SimpleChannelInboundHandler<GetBrokerNameResponse> {
-    private final BlockingQueue<String> responseQueue = new LinkedBlockingQueue<>();
+    private final CompletableFuture<String> brokerNameFuture;
+
+    public GetBrokerNameResponseHandler(CompletableFuture<String> brokerNameFuture) {
+        this.brokerNameFuture = brokerNameFuture;
+    }
 
     @Override
-    public void channelRead0(ChannelHandlerContext ctx, GetBrokerNameResponse msg) {
-        responseQueue.add(msg.getBrokerName());
+    protected void channelRead0(ChannelHandlerContext ctx, GetBrokerNameResponse msg) {
+        if (msg.getBrokerName() != null && !msg.getBrokerName().isEmpty()) {
+            brokerNameFuture.complete(msg.getBrokerName());
+        } else {
+            brokerNameFuture.completeExceptionally(new Throwable("Invalid or empty broker name"));
+        }
+    }
+
+    @Override
+    public void channelReadComplete(ChannelHandlerContext ctx) {
+        // Can not get msg cause it is null
+        //System.out.println("Broker Name: " + msg.getBrokerName());
     }
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-        cause.printStackTrace();
-        ctx.close();
+        brokerNameFuture.completeExceptionally(cause);
     }
 
-    public String getBrokerName() throws InterruptedException {
-        return responseQueue.take();
-    }
 }
