@@ -3,14 +3,14 @@ package org.example.channelpool;
 import io.netty.channel.pool.SimpleChannelPool;
 
 public class NettyFactory {
-    private static SimpleChannelPool pool = null;
+    ChannelPoolManager channelPoolManager;
 
-    public NettyFactory() {}
+    public NettyFactory() {
+        channelPoolManager = new ChannelPoolManager();
+    }
 
-    public static NetworkClient getNetworkClient(String ip, int port) {
-        if (pool == null) {
-            pool = new ChannelPool(ip, port).getPool();
-        }
+    public NetworkClient getNetworkClient(String ip, int port) {
+        SimpleChannelPool pool = channelPoolManager.getPool(ip, port);
         return new NetworkClient(pool);
     }
 }

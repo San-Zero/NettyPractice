@@ -14,24 +14,24 @@ import org.example.handler.GetBrokerNameResponseHandler;
 public class NettyChannelPoolHandler implements ChannelPoolHandler {
     @Override
     public void channelReleased(Channel ch) throws Exception {
-        System.out.println("channelReleased. Channel ID: " + ch.id());
+        //System.out.println("channelReleased. Channel ID: " + ch.id());
     }
 
     @Override
     public void channelAcquired(Channel ch) throws Exception {
-        System.out.println("channelAcquired. Channel ID: " + ch.id());
+        //System.out.println("channelAcquired. Channel ID: " + ch.id());
     }
 
     @Override
     public void channelCreated(Channel ch) throws Exception {
-        System.out.println("channelCreated. Channel ID: " + ch.id());
+        //System.out.println("channelCreated. Channel ID: " + ch.id());
         SocketChannel channel = (SocketChannel) ch;
         channel.config().setKeepAlive(true);
         channel.config().setTcpNoDelay(true);
         channel.pipeline()
                 //.addLast(new LoggingHandler(LogLevel.INFO))
                 .addLast("MessageDecoder", new MessageDecoder())
-                .addLast("MessageEncoder", new MessageEncoder())
-                .addLast("NettyClientHandler", new NettyClientHandler());
+                .addLast("MessageEncoder", new MessageEncoder());
+                //.addLast("NettyClientHandler", new NettyClientHandler());
     }
 }

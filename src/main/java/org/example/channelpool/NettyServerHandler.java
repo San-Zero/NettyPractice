@@ -14,7 +14,7 @@ public class NettyServerHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
-        System.out.println("Channel Active");
+        //System.out.println("Channel Active");
         super.channelActive(ctx);
     }
 
@@ -50,6 +50,12 @@ public class NettyServerHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+        String clientID = ctx.channel().remoteAddress().toString();
+        if (cause instanceof java.io.IOException) {
+            System.out.println("Client :"+ clientID +" disconnected");
+        } else {
+            System.out.println("Error: " + cause);
+        }
         cause.printStackTrace();
         ctx.close();
     }
